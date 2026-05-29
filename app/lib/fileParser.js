@@ -1,7 +1,6 @@
-
-
 // app/lib/fileParser.js
 import mammoth from 'mammoth';
+import { PDFParse } from 'pdf-parse';
 
 const MAX_TEXT_LENGTH = 8000;
 
@@ -35,9 +34,6 @@ export async function extractText(buffer, filename, mimeType) {
 
 async function parsePdf(buffer) {
   try {
-    // Bypass static analysis/bundling which causes Next.js to scan pdf-parse's massive test folder
-    const pdfModule = eval('require')('pdf-parse');
-    const PDFParse = pdfModule.PDFParse;
     if (!PDFParse) {
       throw new Error('PDFParse class not exported from pdf-parse library');
     }
