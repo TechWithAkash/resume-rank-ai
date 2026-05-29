@@ -1,26 +1,121 @@
+/* app/globals.css — Tailwind v4 */
+
+/* ── ALL @imports MUST come first ────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
+/* ── Tailwind v4 theme config ─────────────────────────────────────────────── */
+@theme {
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  --color-bg:           #0A0A0A;
+  --color-surface:      #111111;
+  --color-card-bg:      #111111;
+  --color-border-color: #262626;
+  --color-accent:       #7C3AED;
+  --color-accent-light: #8b5cf6;
+  --color-accent-dark:  #6d28d9;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #0A0A0A;
+  --color-surface: #111111;
+  --color-border: #262626;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family-sans);
+  background-color: var(--color-bg);
+  color: #FAFAFA;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+code, pre {
+  font-family: var(--font-family-mono);
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar       { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 9999px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+::-webkit-scrollbar        { width: 6px; }
+::-webkit-scrollbar-track  { background: #0A0A0A; }
+::-webkit-scrollbar-thumb  { background: #262626; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+/* ── Keyframes & Utilities ─────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #111111 0%, #262626 50%, #111111 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 4px;
+}
+
+/* Focus Ring */
+:focus-visible {
+  outline: 2px solid #7C3AED;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Selection */
+::selection {
+  background: rgba(124, 58, 237, 0.2);
+  color: #FAFAFA;
+}
+
+/* Custom Recruiting Grid Table Styles */
+.ats-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ats-table th {
+  padding: 10px 14px;
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #A1A1AA;
+  border-bottom: 1px solid #262626;
+  text-align: left;
+}
+
+.ats-table td {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #FAFAFA;
+  border-bottom: 1px solid #262626;
+  transition: background-color 0.15s;
+}
+
+.ats-table tr:hover td {
+  background-color: #161616;
+  cursor: pointer;
 }
