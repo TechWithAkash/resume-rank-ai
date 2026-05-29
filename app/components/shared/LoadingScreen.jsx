@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, Circle, FileText, Check } from 'lucide-react';
 
-export default function LoadingScreen({ sessionId, totalCount, onComplete, onError }) {
+export default function LoadingScreen({ formData, totalCount, onComplete, onError }) {
   const [processed, setProcessed] = useState(0);
   const [currentFile, setCurrentFile] = useState('');
   const [dots, setDots]               = useState('');
@@ -18,7 +18,7 @@ export default function LoadingScreen({ sessionId, totalCount, onComplete, onErr
 
   // SSE: connect to analyze endpoint and stream progress
   useEffect(() => {
-    if (!sessionId) return;
+    if (!formData) return;
 
     let source;
 
@@ -28,8 +28,7 @@ export default function LoadingScreen({ sessionId, totalCount, onComplete, onErr
 
         const response = await fetch('/api/analyze', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ sessionId }),
+          body:    formData,
         });
 
         if (!response.ok) {
@@ -62,7 +61,7 @@ export default function LoadingScreen({ sessionId, totalCount, onComplete, onErr
                 setCurrentFile(event.filename || '');
               } else if (event.type === 'complete') {
                 setStage('ranking');
-                setTimeout(() => onComplete(), 800);
+                setTimeout(() => onComplete(event.candidates), 800);
               } else if (event.type === 'error') {
                 onError(event.message || 'Analysis error.');
               }
@@ -78,7 +77,7 @@ export default function LoadingScreen({ sessionId, totalCount, onComplete, onErr
 
     run();
     return () => { if (source) source.close(); };
-  }, [sessionId]);
+  }, [formData]);
 
   const pct = totalCount > 0 ? Math.round((processed / totalCount) * 100) : 0;
 

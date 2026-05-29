@@ -45,7 +45,7 @@ function extractProjects(text) {
     .map((l) => l.replace(/^[-•*]\s*/, ''));
 }
 
-export default function ResultsDashboard({ candidates, onReset, sessionId }) {
+export default function ResultsDashboard({ candidates, onReset, files }) {
   const [viewMode,          setViewMode]          = useState('workspace');
   const [search,            setSearch]            = useState('');
   const [sort,              setSort]              = useState('score_desc');
@@ -63,6 +63,27 @@ export default function ResultsDashboard({ candidates, onReset, sessionId }) {
   // Interactive Custom Questions Modal
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
   const [copiedSummaryId,    setCopiedSummaryId]    = useState(null);
+
+  // Manage browser URL.createObjectURL lifecycle dynamically to prevent leaks
+  const [localFileUrl,      setLocalFileUrl]      = useState('');
+
+  useEffect(() => {
+    if (!selectedCandidate || !files || files.length === 0) {
+      setLocalFileUrl('');
+      return;
+    }
+    const matchingFile = files.find((f) => f.name === selectedCandidate.filename);
+    if (!matchingFile) {
+      setLocalFileUrl('');
+      return;
+    }
+    const url = URL.createObjectURL(matchingFile);
+    setLocalFileUrl(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [selectedCandidate, files]);
 
   // Auto-select top candidate on load
   useEffect(() => {
@@ -730,11 +751,11 @@ RECRUITER RECOMMENDATIONS:
                         </span>
                       </div>
 
-                      {selectedCandidate.filename.toLowerCase().endsWith('.pdf') && sessionId ? (
-                        /* Render direct high-fidelity inline PDF viewer */
+                      {selectedCandidate.filename.toLowerCase().endsWith('.pdf') && localFileUrl ? (
+                        /* Render direct high-fidelity inline PDF viewer using local object URL */
                         <div className="w-full h-[550px] border border-zinc-900 rounded-xl overflow-hidden bg-zinc-950 shadow-2xl relative">
                           <iframe
-                            src={`/api/results/${sessionId}/file?filename=${encodeURIComponent(selectedCandidate.filename)}#toolbar=0&navpanes=0`}
+                            src={`${localFileUrl}#toolbar=0&navpanes=0`}
                             className="w-full h-full border-none bg-zinc-950"
                             title="Candidate PDF Resume"
                           />
@@ -749,10 +770,10 @@ RECRUITER RECOMMENDATIONS:
                                 Native browser sandbox viewports cannot display raw Microsoft Word formats inline.
                               </p>
                             </div>
-                            {sessionId && (
+                            {localFileUrl && (
                               <a
-                                href={`/api/results/${sessionId}/file?filename=${encodeURIComponent(selectedCandidate.filename)}`}
-                                download
+                                href={localFileUrl}
+                                download={selectedCandidate.filename}
                                 className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-violet-600 hover:bg-violet-500 text-white shadow-md active:translate-y-0 hover:-translate-y-0.5 transition-all cursor-pointer"
                               >
                                 <Download className="w-3.5 h-3.5" />

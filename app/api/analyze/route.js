@@ -1,28 +1,65 @@
 import { NextResponse } from 'next/server';
-import { getSession, failSession } from '@/app/lib/sessionStore';
+import { validateBatch, sanitizeFilename } from '@/app/lib/fileValidator';
 import { extractText, extractCandidateName } from '@/app/lib/fileParser';
 import { scoreResume } from '@/app/lib/scoringService';
 import { buildCandidateList } from '@/app/lib/rankingService';
 
+export const maxDuration = 60; // Allow Vercel functions to run up to 60 seconds (Hobby tier max)
+
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { sessionId } = body;
+    const formData = await request.formData();
 
-    if (!sessionId) {
-      return NextResponse.json({ error: 'NO_SESSION_ID', message: 'sessionId is required.' }, { status: 400 });
+    // ── 1. Extract & Parse JD ─────────────────────────────────────────────
+    let jdText = (formData.get('jd') || '').trim();
+    const jdFile = formData.get('jdFile');
+    
+    if (!jdText && jdFile && jdFile.size > 0) {
+      const jdBuffer = Buffer.from(await jdFile.arrayBuffer());
+      const parsed = await extractText(jdBuffer, jdFile.name, jdFile.type);
+      if (parsed.success) {
+        jdText = parsed.text;
+      } else {
+        return NextResponse.json(
+          { error: 'JD_PARSE_FAILED', message: `Could not read JD file: ${parsed.error}` },
+          { status: 400 }
+        );
+      }
     }
 
-    const session = getSession(sessionId);
-    if (!session) {
-      return NextResponse.json({ error: 'SESSION_NOT_FOUND', message: 'Session not found or expired. Please re-upload.' }, { status: 404 });
+    if (!jdText || jdText.length < 10) {
+      return NextResponse.json(
+        { error: 'NO_JD', message: 'Job description is required.' },
+        { status: 400 }
+      );
     }
 
-    if (!session.rawFiles || session.rawFiles.length === 0) {
-      return NextResponse.json({ error: 'NO_FILES', message: 'No files found in session.' }, { status: 400 });
+    // ── 2. Extract Resumes ────────────────────────────────────────────────
+    const resumeFiles = formData.getAll('resumes');
+    if (!resumeFiles || resumeFiles.length === 0) {
+      return NextResponse.json(
+        { error: 'NO_RESUMES', message: 'At least one resume file is required.' },
+        { status: 400 }
+      );
     }
 
-    const { rawFiles, jdText } = session;
+    // ── 3. Deduplicate Files in Batch (EC-01) ─────────────────────────────
+    const seenNames = new Set();
+    const uniqueResumeFiles = resumeFiles.filter((file) => {
+      const sanitized = sanitizeFilename(file.name);
+      if (seenNames.has(sanitized)) return false;
+      seenNames.add(sanitized);
+      return true;
+    });
+
+    // ── 4. Validate Batch ──────────────────────────────────────────────────
+    const validation = validateBatch(uniqueResumeFiles);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: 'VALIDATION_FAILED', message: validation.errors.join(' | ') },
+        { status: 400 }
+      );
+    }
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -33,34 +70,35 @@ export async function POST(request) {
         };
 
         try {
-          send({ type: 'start', total: rawFiles.length });
+          send({ type: 'start', total: uniqueResumeFiles.length });
 
           const parsedFiles = [];
           const scoringInputs = [];
 
-          // ── PHASE 1: Parse all files first (fast, sequential) ────────────
-          for (let i = 0; i < rawFiles.length; i++) {
-            const raw = rawFiles[i];
-            send({ type: 'parsing', index: i + 1, total: rawFiles.length, filename: raw.filename });
+          // ── PHASE 1: Parse all files sequentially (fast) ─────────────────
+          for (let i = 0; i < uniqueResumeFiles.length; i++) {
+            const file = uniqueResumeFiles[i];
+            const filename = sanitizeFilename(file.name);
+            send({ type: 'parsing', index: i + 1, total: uniqueResumeFiles.length, filename });
 
             try {
-              const buffer = Buffer.from(raw.bufferB64, 'base64');
-              const { text, success, error } = await extractText(buffer, raw.filename, raw.mimeType);
-              const candidateName = extractCandidateName(text, raw.filename);
+              const buffer = Buffer.from(await file.arrayBuffer());
+              const { text, success, error } = await extractText(buffer, filename, file.type);
+              const candidateName = extractCandidateName(text, filename);
 
-              parsedFiles.push({ filename: raw.filename, candidateName, rawText: text, parseSuccess: success, parseError: error || null });
-              scoringInputs.push({ filename: raw.filename, candidateName, resumeText: text, parseSuccess: success });
+              parsedFiles.push({ filename, candidateName, rawText: text, parseSuccess: success, parseError: error || null });
+              scoringInputs.push({ filename, candidateName, resumeText: text, parseSuccess: success, parseError: error || null });
             } catch (err) {
-              const candidateName = extractCandidateName('', raw.filename);
-              parsedFiles.push({ filename: raw.filename, candidateName, rawText: '', parseSuccess: false, parseError: err.message });
-              scoringInputs.push({ filename: raw.filename, candidateName, resumeText: '', parseSuccess: false });
+              const candidateName = extractCandidateName('', filename);
+              parsedFiles.push({ filename, candidateName, rawText: '', parseSuccess: false, parseError: err.message });
+              scoringInputs.push({ filename, candidateName, resumeText: '', parseSuccess: false, parseError: err.message });
             }
           }
 
-          send({ type: 'parsing_complete', total: rawFiles.length });
+          send({ type: 'parsing_complete', total: uniqueResumeFiles.length });
 
-          // ── PHASE 2: Score sequentially (1 at a time to avoid timeouts) ──
-          const allResults = new Array(rawFiles.length);
+          // ── PHASE 2: Score sequentially (1 at a time to avoid rate limits) ──
+          const allResults = new Array(uniqueResumeFiles.length);
 
           for (let i = 0; i < scoringInputs.length; i++) {
             const input = scoringInputs[i];
@@ -74,9 +112,9 @@ export async function POST(request) {
                 missingSkills: [],
                 experienceRelevance: 'low',
                 educationAlignment: 'weak',
-                summary: 'Resume could not be parsed — no text extracted.',
+                summary: 'Resume could not be parsed — ' + (input.parseError || 'no text extracted.'),
                 topStrength: '',
-                criticalGap: '',
+                criticalGap: input.parseError || 'Parse failed',
                 parseSuccess: false,
                 parseError: input.parseError || 'Parse failed',
               };
@@ -93,7 +131,7 @@ export async function POST(request) {
                   educationAlignment: 'weak',
                   summary: 'Scoring failed: ' + (err.message || 'Unknown error'),
                   topStrength: '',
-                  criticalGap: '',
+                  criticalGap: err.message || 'Scoring error',
                   parseSuccess: false,
                   parseError: err.message,
                 };
@@ -109,25 +147,22 @@ export async function POST(request) {
               name: allResults[i].candidateName,
             });
 
-            // Small breathing room between Gemini calls
+            // Micro-delay between API calls
             if (i < scoringInputs.length - 1) {
               await sleep(300);
             }
           }
 
-          // ── PHASE 3: Rank + save ──────────────────────────────────────────
+          // ── PHASE 3: Rank Candidates ─────────────────────────────────────
           send({ type: 'ranking' });
           const rankedCandidates = buildCandidateList(parsedFiles, allResults);
-          session.candidates = rankedCandidates;
-          session.status = 'complete';
-          session.processedCount = rawFiles.length;
 
-          send({ type: 'complete', sessionId, total: rankedCandidates.length });
+          // Stream the complete candidates data list directly in the complete event payload
+          send({ type: 'complete', total: rankedCandidates.length, candidates: rankedCandidates });
 
         } catch (err) {
-          console.error('[/api/analyze] Stream error:', err);
-          failSession(sessionId, err.message);
-          send({ type: 'error', message: err.message || 'Analysis failed' });
+          console.error('[/api/analyze] Stream execution error:', err);
+          send({ type: 'error', message: err.message || 'Analysis processing failed.' });
         } finally {
           try { controller.close(); } catch (_) { }
         }
@@ -144,8 +179,8 @@ export async function POST(request) {
     });
 
   } catch (err) {
-    console.error('[/api/analyze] Unexpected error:', err);
-    return NextResponse.json({ error: 'SERVER_ERROR', message: 'An unexpected error occurred.' }, { status: 500 });
+    console.error('[/api/analyze] POST exception:', err);
+    return NextResponse.json({ error: 'SERVER_ERROR', message: 'An unexpected processing error occurred.' }, { status: 500 });
   }
 }
 

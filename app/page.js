@@ -17,7 +17,7 @@ export default function Home() {
   const [files, setFiles] = useState([]);
   const [jdText, setJdText] = useState('');
   const [jdFile, setJdFile] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
+  const [uploadFormData, setUploadFormData] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [candidates, setCandidates] = useState([]);
   const [error, setError] = useState('');
@@ -29,7 +29,7 @@ export default function Home() {
     (jdText.trim().length >= 10 || jdFile !== null) &&
     !uploading;
 
-  // ── Step 1 → 2: Upload files, create session, start analysis ─────────────
+  // ── Step 1 → 2: Build FormData and transition directly to loading step ───
   const handleSubmit = async () => {
     setError('');
     setUploading(true);
@@ -43,43 +43,20 @@ export default function Home() {
         formData.append('jd', jdText);
       }
 
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const uploadData = await uploadRes.json();
-
-      if (!uploadRes.ok) {
-        throw new Error(uploadData.message || 'Upload failed. Please try again.');
-      }
-
-      setSessionId(uploadData.sessionId);
-      setTotalCount(uploadData.totalResumes);
+      setUploadFormData(formData);
+      setTotalCount(files.length);
       setStep(STEP.LOADING);
     } catch (err) {
-      setError(err.message || 'Something went wrong during upload.');
+      setError(err.message || 'Something went wrong while preparing the files.');
     } finally {
       setUploading(false);
     }
   };
 
-  // ── Step 2 → 3: Analysis complete — fetch ranked results ─────────────────
-  const handleAnalysisComplete = async () => {
-    try {
-      const res = await fetch(`/api/results/${sessionId}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to load results.');
-      }
-
-      setCandidates(data.candidates || []);
-      setStep(STEP.RESULTS);
-    } catch (err) {
-      setError(err.message || 'Failed to retrieve results.');
-      setStep(STEP.UPLOAD);
-    }
+  // ── Step 2 → 3: Analysis complete — receive streamed candidate list directly ──
+  const handleAnalysisComplete = (candidatesList) => {
+    setCandidates(candidatesList || []);
+    setStep(STEP.RESULTS);
   };
 
   // ── Analysis error ────────────────────────────────────────────────────────
@@ -94,7 +71,7 @@ export default function Home() {
     setFiles([]);
     setJdText('');
     setJdFile(null);
-    setSessionId(null);
+    setUploadFormData(null);
     setTotalCount(0);
     setCandidates([]);
     setError('');
@@ -300,7 +277,7 @@ export default function Home() {
           {step === STEP.LOADING && (
             <div className="flex-1 flex flex-col justify-center py-10">
               <LoadingScreen
-                sessionId={sessionId}
+                formData={uploadFormData}
                 totalCount={totalCount}
                 onComplete={handleAnalysisComplete}
                 onError={handleAnalysisError}
@@ -314,7 +291,7 @@ export default function Home() {
               <ResultsDashboard
                 candidates={candidates}
                 onReset={handleReset}
-                sessionId={sessionId}
+                files={files}
               />
             </div>
           )}
