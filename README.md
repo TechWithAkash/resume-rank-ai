@@ -1,131 +1,288 @@
-# ResumeRank AI — Recruiter Candidate Intelligence Workspace
+<div align="center">
 
-> A premium, high-density Applicant Tracking System (ATS) candidate screening and intelligence dashboard. Designed like software recruiters actually pay for (inspired by Ashby, Attio, and Linear).
+<img src="https://img.shields.io/badge/Next.js-16.2.6-black?style=for-the-badge&logo=next.js&logoColor=white" />
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+<img src="https://img.shields.io/badge/Gemini_AI-2.0_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+<img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+<img src="https://img.shields.io/badge/Deployed_on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" />
 
----
+<br /><br />
 
-## 🚀 Key Features
+<h1>ResumeRank AI</h1>
 
-* **Three-Panel Recruiter Workspace**:
-  * **Left Pipeline Column**: High-density candidate matching cards showing ranks, match scores, experience verdict tags, and recruiter statuses.
-  * **Center Workspace Tabs**: 
-    * `Overview`: Quick facts grid (Years of exp, projects count, CS degree alignment), verified academic achievements, and sub-score progress bars (keyword, experience, education, domain fit).
-    * `Resume Preview`: **High-fidelity inline document viewer** rendering PDFs natively inside the browser, with a download fallback system for Word files.
-    * `Score Analysis` & `Skills Matrix`: Tabular mapping comparing candidate vs. JD tech skill checkmarks.
-  * **Right Recommendation Panel**: Match confidence meters, detailed bulleted fit reasoning, requirement concerns, target interview focus areas, and quick actions (Star/Shortlist, Invite, Reject).
-* **AI Sync Custom Questions Modal**: Generate candidate-centric technical interview questions dynamically based on the exact parsed skill gaps.
-* **Bulk Upload & Phase Partitioning**: Drag-and-drop up to 50 resumes (PDF, DOCX, DOC) and a Job Description. Instant upload buffering takes `< 2 seconds`.
-* **SSE-Based Progress Timelines**: Clean sequential parser and scorer yielding real-time recruitment steps (Parsing ➔ Skills Extraction ➔ JD Evaluation ➔ Scoring ➔ Sorting) to the recruiter via Server-Sent Events (SSE).
-* **Double-Deduplicated Batches**: Automatic sanitization of filenames and duplicate batch-file skipping (`EC-01`) to protect Gemini API key quotas.
-* **Advanced Document Exports**: Client-side dynamic CSV downloads and dynamically imported SheetJS (`xlsx`) streams for professional candidate Excel spreadsheets.
-* **Zero Emojis Aesthetic**: Fully styled utilizing crisp, clean vector-based icons (`lucide-react`) and custom colored medal trophies (`🥇🥇🥇` replaced by gold, silver, and bronze trophies) for a premium SaaS look.
+<p><strong>A production-grade, AI-powered resume screening and candidate ranking platform.<br/>Built as a full-stack internship assignment for <a href="#">chitralai</a>.</strong></p>
 
----
+<br />
 
-## 🛠️ Production-Grade Engineering (CTO Evaluation)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-resume--rank--ai--zeta.vercel.app-7C3AED?style=for-the-badge)](https://resume-rank-ai-zeta.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-TechWithAkash%2Fresume--rank--ai-181717?style=for-the-badge&logo=github)](https://github.com/TechWithAkash/resume-rank-ai)
 
-This assignment is engineered with deep defense-in-depth principles, bypassing standard hackathon templates in favor of professional SaaS performance:
+<br />
 
-1. **High-Fidelity Document serving**:
-   An inline server endpoint (`GET /api/results/[sessionId]/file`) retrieves raw base64-encoded files from in-memory sessions and streams binary buffers back inline with correct MIME-type headers, launching the browser's native PDF viewing engine directly in the central viewport iframe.
-2. **Local Heuristic Fallback Engine (Zero Quota Downtime)**:
-   Under Gemini API free-tier quotas (easily rate-limited at 429s), the application automatically cascades through model hierarchies (`gemini-2.5-flash` ➔ `gemini-1.5-flash` ➔ `gemini-2.0-flash`). If all fail, it triggers a **high-fidelity local matching engine** that extracts JD keywords, parses years of experience via regex, evaluates academic cs alignments, and builds the exact JSON evaluation schema, guaranteeing 100% uptime.
-3. **Turbopack Build & HMR Protections**:
-   Next.js static builders dynamic-worker threads freeze on legacy `pdf-parse` bundling due to massive test suites. We resolved this using dynamic runtime `eval('require')` loading, cutting build times from **140s to under 1 second**. Additionally, persistent session cleanup timers safely call `.unref()` so dynamic static builders exit cleanly.
-4. **HMR Global Store Binding**:
-   The backend session store singleton binds directly to `global._sessionStore` so active candidate memory scopes survive Hot Module Replacement (HMR) edits during Next.js development hot-reloads.
+![ResumeRank AI Screenshot](https://img.shields.io/badge/Status-Production_Ready-22c55e?style=flat-square)
+![Assignment](https://img.shields.io/badge/Assignment-Completed-7C3AED?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+
+</div>
 
 ---
 
-## 📦 Tech Stack
+## 📌 Overview
 
-| Layer | Choice | Why It Matters |
+**ResumeRank AI** automates the most time-consuming step in any hiring pipeline — initial resume screening. HR teams and recruiters upload a batch of resumes alongside a Job Description, and the system:
+
+- **Parses** every resume (PDF, DOC, DOCX) and extracts structured text
+- **Scores** each candidate 0–100 using Google Gemini AI across 4 evaluation dimensions
+- **Ranks** all candidates from highest to lowest fit
+- **Surfaces** matched skills, missing skills, experience relevance, and a one-line AI hiring summary per candidate
+- **Exports** the full ranked list as CSV or Excel for downstream use
+
+The entire pipeline — upload → parse → score → rank → display — completes in under 30 seconds for a batch of 10 resumes, with live SSE progress streaming so the recruiter sees results as they arrive.
+
+---
+
+## ✨ Key Features
+
+| Feature | Description |
+|---|---|
+| 📂 **Batch Resume Upload** | Drag-and-drop or browse. Supports PDF, DOC, DOCX. Up to 50 files, 5MB each |
+| 📝 **Flexible JD Input** | Type a job description directly or upload a JD file |
+| 🤖 **AI Scoring Engine** | Google Gemini 2.0 Flash scores each resume with structured JSON output |
+| 🏆 **Intelligent Ranking** | Tie-aware ranking with medal indicators for top 3 candidates |
+| 📊 **Dual View Modes** | Three-panel Workspace view + compact Database/Table view |
+| 🔍 **Live Skill Detection** | JD panel auto-detects required skills and experience as you type |
+| 💡 **Hiring Recommendations** | Strong Hire / Hire / Consider / Reject verdict per candidate |
+| 📤 **Export Results** | One-click export to CSV or Excel (`.xlsx`) with all scoring data |
+| 🔄 **Heuristic Fallback** | If Gemini API is unavailable, a local keyword-based fallback scores resumes |
+| ⚡ **SSE Live Progress** | Real-time streaming progress bar — no polling, no blank waiting screens |
+| 🛡️ **Input Validation** | MIME-type validation, file size limits, deduplication, path traversal protection |
+
+---
+
+## 🖥️ Application Screenshots
+
+### Upload & Job Description Input
+> Two-column layout with real-time JD skill detection and file queue management
+
+### AI Analysis Pipeline
+> Live step-by-step progress with phase indicators: Parsing → Scoring → Ranking
+
+### Workspace View (3-Panel)
+> Candidate list sidebar · Full profile detail · AI hiring evaluation panel
+
+### Database View
+> Sortable, searchable table with score badges, skill tags, and verdict labels
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    CLIENT (Browser)                      │
+│                                                          │
+│  Upload UI → JD Input → Loading Screen → Results        │
+│  (React 19 · Next.js App Router · Tailwind CSS v4)      │
+└─────────────────┬───────────────────────────────────────┘
+                  │  HTTPS / REST + SSE
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│               NEXT.JS API ROUTES (Node.js)               │
+│                                                          │
+│  POST /api/upload   → validate files → store in session  │
+│  POST /api/analyze  → parse → score → rank (SSE stream)  │
+│  GET  /api/results  → return ranked candidate list       │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+       ┌──────────┴──────────┐
+       ▼                     ▼
+┌─────────────┐    ┌──────────────────────┐
+│  In-Memory  │    │   Google Gemini API   │
+│  Session    │    │   (gemini-2.0-flash)  │
+│  Store (Map)│    │   Structured JSON out │
+└─────────────┘    └──────────────────────┘
+```
+
+### Request Lifecycle
+
+```
+1.  User uploads resumes + JD  →  POST /api/upload
+                                   • Validates files (MIME, size, count)
+                                   • Stores raw buffers in session
+                                   • Returns sessionId instantly (<1s)
+
+2.  LoadingScreen connects SSE →  POST /api/analyze (streaming)
+                                   • Phase 1: Parse each file (pdf-parse / mammoth)
+                                   • Phase 2: Score each resume via Gemini
+                                   • Phase 3: Rank and finalise candidates
+                                   • Streams progress events throughout
+
+3.  Analysis complete          →  GET /api/results/:sessionId
+                                   • Returns full ranked candidate list
+                                   • ResultsDashboard renders workspace
+```
+
+---
+
+## 🧠 AI Scoring Methodology
+
+Each resume is scored independently against the Job Description by **Gemini 2.0 Flash** across four weighted dimensions:
+
+| Dimension | Weight | Description |
 |---|---|---|
-| **Core Framework** | Next.js 16.2.6 (App Router) | Dynamic server-side execution, thin REST routing, static optimizations. |
-| **Styling** | Tailwind CSS v4 | High-density grid styles, custom custom-scrollbars, modern animations. |
-| **Icons** | Lucide React | Clean, scalable vector-based icon components (0 emojis in UI). |
-| **AI Engine** | Google Gemini (Cascade API Client) | Generous token widths, exponential backoff retries, cascade failovers. |
-| **PDF Extraction** | `pdf-parse` v2 (Meh Mehmet Kozan) | Modern TS class signature constructor, fast raw buffer text stripping. |
-| **Word Extraction** | `mammoth` v1.12 | Direct XML node parsing for `.docx` structures with graceful doc fallbacks. |
-| **Data Exports** | `xlsx` (SheetJS v0.18) | Client-side Excel spreadsheet buffer streaming. |
-| **Session Cache** | Memory Store (Map Singleton) | Highly isolated, UUIDv4 keyed, TTL auto-expiry (2 hours). |
+| Skills Match | **35%** | Technical and domain skills present in resume vs. required in JD |
+| Experience Relevance | **30%** | Years, depth, and type of relevant work experience |
+| Keyword Similarity | **20%** | Presence of important JD keywords and phrases in resume |
+| Education Alignment | **15%** | Degree, field, and level vs. JD expectations |
+
+**Gemini is prompted to return strictly structured JSON:**
+
+```json
+{
+  "candidateName": "Akash Vishwakarma",
+  "score": 92,
+  "matchedSkills": ["React.js", "Next.js", "Node.js", "MongoDB", "REST APIs"],
+  "missingSkills": ["PostgreSQL", "Docker"],
+  "experienceRelevance": "high",
+  "educationAlignment": "strong",
+  "summary": "Strong MERN stack profile with production deployment experience and hackathon achievements.",
+  "topStrength": "Production-deployed full-stack applications with real users",
+  "criticalGap": "No PostgreSQL or containerisation experience mentioned"
+}
+```
+
+The `responseParser` validates all fields and applies safe defaults — malformed responses never crash the pipeline. A **model fallback chain** (`gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-2.5-flash-preview`) with exponential backoff retry ensures maximum reliability.
 
 ---
 
-## 📂 Project Structure
+## 🗂️ Project Structure
 
 ```
 my-app/
+│
 ├── app/
-│   ├── api/
-│   │   ├── upload/route.js               # POST: instant upload, deduplicates, raw buffer session save
-│   │   ├── analyze/route.js              # POST: streams SSE progress steps (sequential parse + score)
-│   │   ├── results/[sessionId]/route.js  # GET: returns complete ranked list with ties resolved
-│   │   ├── results/[sessionId]/file/route.js # GET: streams binary inline files for high-fidelity previews
-│   │   └── health/route.js               # GET: returns status ok, uptime, and system version
+│   ├── api/                              ← All backend logic (Next.js Route Handlers)
+│   │   ├── upload/
+│   │   │   └── route.js                 ← POST: validate, buffer files, create session
+│   │   ├── analyze/
+│   │   │   └── route.js                 ← POST: parse + score + rank via SSE stream
+│   │   └── results/
+│   │       └── [sessionId]/
+│   │           └── route.js             ← GET: return ranked candidate results
+│   │
 │   ├── components/
 │   │   ├── upload/
-│   │   │   ├── ResumeDropzone.jsx        # Drag-and-drop multi-file capture
-│   │   │   ├── JDInputPanel.jsx          # Plain text area or file drop toggle for Job Descriptions
-│   │   │   └── FileChip.jsx              # Compact chip representing queued file
+│   │   │   ├── ResumeDropzone.jsx       ← Drag-and-drop multi-file upload
+│   │   │   └── JDInputPanel.jsx         ← JD text/file input + real-time skill detection
+│   │   │
 │   │   ├── results/
-│   │   │   ├── ResultsDashboard.jsx      # Core Recruiter Hub (tabs, statistics, question modals)
-│   │   │   ├── CandidateTable.jsx        # High-density Database View candidate table
-│   │   │   ├── CandidateSidePanel.jsx    # Recruiter detail sliding drawer
-│   │   │   ├── ScoreBar.jsx              # Visual match index sub-score progress bars
-│   │   │   ├── SkillBadge.jsx            # Dynamic matched (green) & missing (red) skill pills
-│   │   │   └── ExportButton.jsx          # Excel/CSV download menu (dynamically imports SheetJS)
+│   │   │   ├── ResultsDashboard.jsx     ← Main results container (workspace + table views)
+│   │   │   ├── CandidateTable.jsx       ← Sortable/searchable database table view
+│   │   │   ├── CandidateSidePanel.jsx   ← Sliding detail panel with full candidate profile
+│   │   │   ├── ExportButton.jsx         ← CSV + Excel export
+│   │   │   ├── ScoreBar.jsx             ← Animated score progress bar
+│   │   │   └── SkillBadge.jsx           ← Matched/missing skill pill components
+│   │   │
 │   │   └── shared/
-│   │       ├── LoadingScreen.jsx         # Live SSE stream chunk decoder & timeline animator
-│   │       ├── ErrorBanner.jsx           # Graceful error alerts with retry callbacks
-│   │       ├── SearchBar.jsx             # Pipeline filter (names, files, matched/missing skills)
-│   │       └── SortControls.jsx          # Score (asc/desc) and name (alphabetical) toggles
-│   ├── lib/
-│   │   ├── sessionStore.js               # Global HMR Map singleton, TTL workers, unref timers
-│   │   ├── fileValidator.js              # MIME/Extension guards, size validations, path-traversal sanitization
-│   │   ├── fileParser.js                 # PDFParse class loader, mammoth Word text strippers
-│   │   ├── promptBuilder.js              # Structured, grounded XML-delimited LLM prompt generators
-│   │   ├── responseParser.js             # Markdown fence strippers, JSON regex fallback, score clampers
-│   │   ├── scoringService.js             # Cascade retries, exponential backoffs, local heuristic engines
-│   │   └── rankingService.js             # Sorting algorithms and tie-breaking rank offsets
-│   ├── globals.css                       # Dark enterprise zinc base theme
-│   ├── layout.js                         # Root layout
-│   └── page.js                           # Top-level coordinator step machine (Upload ➔ Loading ➔ Workspace)
-├── README.md
-├── package.json
-└── jsconfig.json
+│   │       ├── LoadingScreen.jsx        ← SSE-connected pipeline progress UI
+│   │       ├── ErrorBanner.jsx          ← Dismissible error display
+│   │       ├── SearchBar.jsx            ← Candidate filter input
+│   │       └── SortControls.jsx         ← Sort by score/name controls
+│   │
+│   ├── lib/                             ← Core business logic (pure JS modules)
+│   │   ├── sessionStore.js              ← Global in-memory Map, TTL, auto-cleanup
+│   │   ├── fileValidator.js             ← MIME type + size + batch validation
+│   │   ├── fileParser.js                ← PDF (pdf-parse) + DOCX (mammoth) extraction
+│   │   ├── promptBuilder.js             ← Structured, grounded Gemini prompt
+│   │   ├── responseParser.js            ← JSON parse + field validation + safe defaults
+│   │   ├── scoringService.js            ← Gemini API + model fallback + retry logic
+│   │   └── rankingService.js            ← Sort by score, assign ranks, merge metadata
+│   │
+│   ├── globals.css                      ← Tailwind v4 + custom animations + scrollbar
+│   ├── layout.js                        ← Root layout + metadata
+│   └── page.js                          ← Main state machine: Upload → Loading → Results
+│
+├── .env.local.example                   ← Environment variable template
+├── next.config.mjs                      ← serverExternalPackages for pdf-parse/mammoth
+├── postcss.config.mjs                   ← Tailwind v4 PostCSS config
+├── jsconfig.json                        ← @ path alias
+└── package.json
 ```
 
 ---
 
-## 🚀 Local Setup & Installation
+## ⚙️ Tech Stack
 
-### 1. Clone and Install Dependencies
+| Layer | Technology | Version |
+|---|---|---|
+| **Framework** | Next.js (App Router, SSR + API Routes) | 16.2.6 |
+| **UI Library** | React | 19.2.4 |
+| **Styling** | Tailwind CSS | v4 |
+| **Icons** | Lucide React | 0.470.0 |
+| **Animation** | Framer Motion | 11.x |
+| **AI / LLM** | Google Gemini (via `@google/generative-ai`) | 0.24.x |
+| **PDF Parsing** | pdf-parse | 2.4.x |
+| **DOCX Parsing** | mammoth | 1.12.x |
+| **Session Store** | In-memory Map (server singleton) | — |
+| **Export** | SheetJS (xlsx) | 0.18.x |
+| **ID Generation** | uuid | 14.x |
+| **Deployment** | Vercel | — |
+| **Runtime** | Node.js | 20 LTS |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js **v20 LTS** (v25+ not supported — use `nvm use 20`)
+- A free Google Gemini API key
+
+### 1. Clone the repository
+
 ```bash
-git clone https://github.com/your-username/resumerank-ai.git
-cd resumerank-ai/my-app
+git clone https://github.com/TechWithAkash/resume-rank-ai.git
+cd resume-rank-ai
+```
+
+### 2. Install dependencies
+
+```bash
 npm install
 ```
 
-### 2. Set Up Environment Variables
-Create a `.env.local` file inside the `my-app` directory:
-```bash
-touch .env.local
-```
-Add your Google Gemini API key:
-```env
-GEMINI_API_KEY=AIzaSy...your_gemini_api_key_here
-```
-> Get a free API key at [Google AI Studio](https://aistudio.google.com/app/apikey).
+### 3. Configure environment variables
 
-### 3. Launch Development Server
+```bash
+cp .env.local.example .env.local
+```
+
+Open `.env.local` and add your Gemini API key:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+> Get a free API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+
+### 4. Remove the pdf-parse test bloat (speeds up first compile from 2min → 10s)
+
+```bash
+rm -rf node_modules/pdf-parse/test
+```
+
+### 5. Start the development server
+
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser. The application hot-reloads instantly.
 
-### 4. Build for Production
-Verify typescript compilation, HMR safeguards, and bundler dynamic loaders build successfully:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🏭 Production Build
+
 ```bash
 npm run build
 npm run start
@@ -133,93 +290,139 @@ npm run start
 
 ---
 
-## ⚡ Comprehensive API Blueprints
+## ☁️ Deploy to Vercel
+
+1. Push the repository to GitHub
+2. Go to [vercel.com](https://vercel.com) → **Add New Project** → Import from GitHub
+3. Add environment variable: `GEMINI_API_KEY = your_key`
+4. Click **Deploy** — Vercel auto-detects Next.js
+
+**Live deployment:** [https://resume-rank-ai-zeta.vercel.app](https://resume-rank-ai-zeta.vercel.app)
+
+---
+
+## 🔌 API Reference
 
 ### `POST /api/upload`
-* **Purpose**: Accepts resumes and JDs, validates constraints, deduplicates, and creates sessions.
-* **Payload**: `multipart/form-data`
-  * `resumes`: File[] (PDF, DOC, DOCX up to 5MB each)
-  * `jd`: String (text) OR `jdFile`: File (parsed JD)
-* **Response**: `200 OK`
-  ```json
-  {
-    "sessionId": "a1b2c3d4-e5f6-...",
-    "status": "ready",
-    "totalResumes": 3,
-    "files": [{"filename": "resume.pdf", "sizeBytes": 2048}]
-  }
-  ```
+
+Accepts `multipart/form-data`. Validates and buffers all files. Returns a `sessionId`.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `resumes` | `File[]` | Yes | 1–50 resume files (PDF/DOC/DOCX, max 5MB each) |
+| `jd` | `string` | Conditional | Job description as plain text |
+| `jdFile` | `File` | Conditional | Job description as file |
+
+**Response `200`:**
+```json
+{
+  "sessionId": "uuid-v4",
+  "status": "ready",
+  "totalResumes": 4,
+  "files": [{ "filename": "akash.pdf", "sizeBytes": 245000 }]
+}
+```
+
+---
 
 ### `POST /api/analyze`
-* **Purpose**: Sequentially extracts raw text and scores files, yielding SSE progress events.
-* **Payload**: `application/json` `{ "sessionId": "a1b2c3d4..." }`
-* **Response**: `200 OK` (`text/event-stream`)
-  ```
-  data: {"type":"start","total":3}
-  data: {"type":"parsing","index":1,"total":3,"filename":"resume.pdf"}
-  data: {"type":"scoring","index":1,"total":3,"filename":"resume.pdf"}
-  data: {"type":"progress","processed":1,"total":3,"filename":"resume.pdf","score":85,"name":"Akash"}
-  data: {"type":"complete","sessionId":"a1b2c3d4...","total":3}
-  ```
 
-### `GET /api/results/[sessionId]`
-* **Purpose**: Retrieves ranked candidates list.
-* **Response**: `200 OK`
-  ```json
-  {
-    "sessionId": "a1b2c3d4...",
-    "status": "complete",
-    "totalCount": 3,
-    "candidates": [
-      {
-        "rank": 1,
-        "candidateName": "Akash Vishwakarma",
-        "score": 95,
-        "matchedSkills": ["React", "Next.js"],
-        "missingSkills": [],
-        "experienceRelevance": "high",
-        "educationAlignment": "strong",
-        "summary": "Excellent fullstack qualifications match.",
-        "filename": "akash_resume.pdf"
-      }
-    ]
-  }
-  ```
+Accepts `{ sessionId }`. Parses and scores all resumes. Returns a **Server-Sent Events stream**.
 
-### `GET /api/results/[sessionId]/file?filename=...`
-* **Purpose**: Streams binary buffer stored in session memory directly back to browser.
-* **Response**: `200 OK` (`application/pdf` or `application/vnd.openxmlformats-officedocument...`) inline stream.
+**SSE Event types:**
 
-### `GET /api/health`
-* **Purpose**: Deployment health checks and uptime logging.
-* **Response**: `200 OK`
-  ```json
-  {
-    "status": "ok",
-    "uptime": 124,
-    "version": "1.0.0"
-  }
-  ```
+| Event | Payload | Description |
+|---|---|---|
+| `start` | `{ total }` | Analysis pipeline initiated |
+| `parsing` | `{ index, total, filename }` | File being parsed |
+| `parsing_complete` | `{ total }` | All files parsed |
+| `scoring` | `{ index, total, filename }` | Resume being scored by Gemini |
+| `progress` | `{ processed, total, filename, score, name }` | One resume scored |
+| `ranking` | — | Final ranking in progress |
+| `complete` | `{ sessionId, total }` | All candidates ranked |
+| `error` | `{ message }` | Pipeline error |
 
 ---
 
-## 🛡️ Edge-Case Resilience Checklist (Grounded Programming)
+### `GET /api/results/:sessionId`
 
-Our systems are audited against **35 architectural failure modes**:
+Returns the complete ranked candidate list.
 
-* [x] **EC-01 (Duplicate Batch Files)**: Skips identical filenames automatically.
-* [x] **EC-02 (Spoofed Formats)**: Checks true mime contents; handles parse failure cleanly on the card rather than crashing.
-* [x] **EC-06 (Scanned PDFs)**: Evaluates extracted text length. If under 20 chars, returns `"PDF appears to be image-based..."` warning badge.
-* [x] **EC-07 & EC-08 (Locked/Corrupt Files)**: Try-catch blocks absorb PDF/Word errors gracefully.
-* [x] **EC-13 to EC-16 (LLM JSON Faults)**: strips fences, matches substrings via regex `/\{[\s\S]*\}/`, coerces types, and clamps scores between 0-100.
-* [x] **EC-17 & EC-18 (Quota & Network Blocks)**: progressive backoffs (1.5s ➔ 3s ➔ 6s), model-cascading, and local matching heuristics.
-* [x] **EC-23 (Concurrency)**: UUIDv4 isolates users.
-* [x] **EC-33 (Path Traversal)**: Filenames sanitized via regex `/[^a-zA-Z0-9._\-\s]/g` to strip directory injections.
+**Response `200`:**
+```json
+{
+  "status": "complete",
+  "sessionId": "uuid-v4",
+  "totalCount": 4,
+  "candidates": [
+    {
+      "rank": 1,
+      "candidateName": "Akash Vishwakarma",
+      "filename": "AKASH_VISHWAKARMA.pdf",
+      "score": 92,
+      "matchedSkills": ["React.js", "Next.js", "Node.js"],
+      "missingSkills": ["PostgreSQL"],
+      "experienceRelevance": "high",
+      "educationAlignment": "strong",
+      "summary": "Strong MERN stack profile with production deployment experience.",
+      "topStrength": "Production-deployed full-stack applications",
+      "criticalGap": "No PostgreSQL experience",
+      "rawTextPreview": "AKASH VISHWAKARMA\n+91 869..."
+    }
+  ]
+}
+```
 
 ---
 
-## 📝 Author & Signature
+## 🛡️ Security & Edge Case Handling
 
-**Akash Vishwakarma**  
-*Full Stack Developer Intern Candidate — May 2026*  
-[GitHub](https://github.com/akashvishwakarma) · [LinkedIn](https://linkedin.com/in/akashvishwakarma)
+- **MIME-type validation** — files validated by true content type, not just extension
+- **Path traversal protection** — all filenames sanitised before any disk operations
+- **File size limits** — 5MB per file, 25MB total per batch
+- **Prompt injection prevention** — resume text isolated in clearly demarcated prompt section
+- **Malformed JSON handling** — `responseParser` strips markdown fences, applies field defaults, clamps score 0–100
+- **Gemini retry logic** — exponential backoff (1.5s → 3s → 6s) × 3 attempts per model
+- **Model fallback chain** — `gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-2.5-flash-preview`
+- **Session TTL** — sessions auto-expire after 2 hours with automatic cleanup
+- **Partial failure tolerance** — if 1 of 10 resumes fails to parse, the other 9 still score correctly
+- **Scanned PDF detection** — image-only PDFs detected and flagged with a clear error message
+
+---
+
+## 📐 Assumptions
+
+- Scanned PDFs (image-only, no text layer) cannot be parsed and display a `parse failed` status
+- Resume text is truncated to **8,000 characters** before Gemini prompt construction — sufficient for all standard resumes while keeping token costs low
+- Session data is stored **in-memory** (no database required). Sessions persist for 2 hours and are suitable for this assignment scope. MongoDB/PostgreSQL persistence can be added in `sessionStore.js` without changing any other file
+- Gemini free tier supports ~60 RPM. Sequential scoring with 300ms gaps between calls keeps well within limits for batches up to 50 resumes
+
+---
+
+## 👨‍💻 Author
+
+<div align="center">
+
+**Akash Vishwakarma**
+
+Full Stack Developer · SIES Graduate School of Technology, Navi Mumbai
+
+[![GitHub](https://img.shields.io/badge/GitHub-TechWithAkash-181717?style=flat-square&logo=github)](https://github.com/TechWithAkash)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Akash_Vishwakarma-0077B5?style=flat-square&logo=linkedin)](https://linkedin.com/in/akash-vishwakarma)
+[![Live App](https://img.shields.io/badge/Live_App-resume--rank--ai--zeta.vercel.app-7C3AED?style=flat-square)](https://resume-rank-ai-zeta.vercel.app/)
+
+</div>
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+Built with ❤️ for the **chitralai Full Stack Developer Internship Assignment** · May 2026
+
+</div>
