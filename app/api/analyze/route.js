@@ -97,15 +97,12 @@ export async function POST(request) {
 
           send({ type: 'parsing_complete', total: uniqueResumeFiles.length });
 
-          // ── PHASE 2: Score sequentially (1 at a time to avoid rate limits) ──
-          const allResults = new Array(uniqueResumeFiles.length);
-
-          for (let i = 0; i < scoringInputs.length; i++) {
-            const input = scoringInputs[i];
-            send({ type: 'scoring', index: i + 1, total: scoringInputs.length, filename: input.filename });
-
+          // ── PHASE 2: Score in parallel (blazing fast, fits inside Vercel's 10s timeout) ──
+          let processedCount = 0;
+          const scoringPromises = scoringInputs.map(async (input) => {
+            let result;
             if (!input.parseSuccess || !input.resumeText) {
-              allResults[i] = {
+              result = {
                 candidateName: input.candidateName,
                 score: 0,
                 matchedSkills: [],
@@ -120,9 +117,9 @@ export async function POST(request) {
               };
             } else {
               try {
-                allResults[i] = await scoreResume(input.resumeText, jdText, input.filename);
+                result = await scoreResume(input.resumeText, jdText, input.filename);
               } catch (err) {
-                allResults[i] = {
+                result = {
                   candidateName: input.candidateName,
                   score: 0,
                   matchedSkills: [],
@@ -138,20 +135,20 @@ export async function POST(request) {
               }
             }
 
+            processedCount++;
             send({
               type: 'progress',
-              processed: i + 1,
+              processed: processedCount,
               total: scoringInputs.length,
               filename: input.filename,
-              score: allResults[i].score,
-              name: allResults[i].candidateName,
+              score: result.score,
+              name: result.candidateName,
             });
 
-            // Micro-delay between API calls
-            if (i < scoringInputs.length - 1) {
-              await sleep(300);
-            }
-          }
+            return result;
+          });
+
+          const allResults = await Promise.all(scoringPromises);
 
           // ── PHASE 3: Rank Candidates ─────────────────────────────────────
           send({ type: 'ranking' });
