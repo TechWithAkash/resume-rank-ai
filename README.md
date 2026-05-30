@@ -10,7 +10,7 @@
 
 <h1>ResumeRank AI</h1>
 
-<p><strong>A production-grade, AI-powered resume screening and candidate ranking platform.<br/>Built as a full-stack internship assignment for <a href="#">chitralai</a>.</strong></p>
+<p><strong>A production-grade, AI-powered resume screening and candidate ranking platform.</p>
 
 <br />
 
