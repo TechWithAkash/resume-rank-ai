@@ -1,6 +1,6 @@
 // app/lib/fileParser.js
 import mammoth from 'mammoth';
-import { PDFParse } from 'pdf-parse';
+import pdf from 'pdf-parse';
 
 const MAX_TEXT_LENGTH = 8000;
 
@@ -34,12 +34,7 @@ export async function extractText(buffer, filename, mimeType) {
 
 async function parsePdf(buffer) {
   try {
-    if (!PDFParse) {
-      throw new Error('PDFParse class not exported from pdf-parse library');
-    }
-
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
+    const result = await pdf(buffer);
     const text = (result.text || '').trim();
 
     if (!text || text.length < 20) {
